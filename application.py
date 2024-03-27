@@ -4,14 +4,31 @@ import json
 from pathlib import Path
 from streamlit_ace import st_ace
 
+# Function to save application data
+def save_application_data(application_data):
+    # Convert application data to JSON format
+    application_data_json = json.dumps(application_data, indent=4, sort_keys=True, default=str)
+    # Define file path (you might want to include a timestamp or user identifier in the filename)
+    file_path = f"applications/application_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    # Save JSON data to a file
+    with open(file_path, 'w') as file:
+        file.write(application_data_json)
+    # Show a success message (optional, depending on your application flow)
+    st.success("Application data saved successfully!")
+  
 # Helper function for navigation and auto-saving data
 def navigate_and_save(section_data, next_page, prev_page=None, last_section=False):
     """Navigate to next or previous page and save current section's data."""
     if prev_page and st.button("Previous Section"):
         st.session_state.page_number = prev_page
-    elif st.button("Next Section") or (last_section and st.button("Submit Application")):
-        st.session_state.application_data.update(section_data)
-        st.session_state.page_number = next_page
+    else:
+        if section_data:
+            st.session_state.application_data.update(section_data)
+        if st.button("Next Section") or (last_section and st.button("Submit Application")):
+            if last_section:
+                # Save application data since this is the last section
+                save_application_data(st.session_state.application_data)
+            st.session_state.page_number = next_page
   
 # COMPLETE FORM CONTENT
 def application_form():
@@ -437,30 +454,30 @@ def application_form():
                   st.session_state.page_number += 1
 
 # Section 14: Confirmation and Submission
-elif st.session_state.page_number == 15:
-    with st.form("Section_14"):
-        st.header("Section 14: Confirmation")
-        st.json(st.session_state.application_data)  # Preview application data for user review
-
-        # Confirmation checkbox
-        confirmation = st.checkbox(
-            "I hereby confirm that all information entered is correct to the best of my knowledge and belief."
-        )
-
-        # Enhanced submit button
-        submitted = st.form_submit_button("Submit Application")
-        if submitted:
-            if confirmation:
-                # Save application data - This function needs to be defined according to your storage method
-                save_application_data(st.session_state.application_data)
-                st.success(
-                    "Your application has been successfully submitted! Thank you for applying."
-                )
-
-                # Optionally reset/clear application state
-                for key in list(st.session_state.keys()):
-                    del st.session_state[key]  # Removing individual keys
-            else:
-                st.error(
-                    "You must confirm the accuracy of your information before submitting."
-                )
+  elif st.session_state.page_number == 15:
+      with st.form("Section_14"):
+          st.header("Section 14: Confirmation")
+  
+          # Preview the collected application data for user to review
+          st.json(st.session_state.application_data)
+  
+          # Confirmation checkbox
+          confirmation = st.checkbox(
+              "I hereby confirm that all information entered is correct to the best of my knowledge and belief."
+          )
+  
+          # Submit button for the form
+          submitted = st.form_submit_button("Submit Application")
+          if submitted:
+              if confirmation:
+                  # Save application data using the designated function
+                  save_application_data(st.session_state.application_data)
+  
+                  st.success("Your application has been successfully submitted! Thank you for applying.")
+  
+                  # Optionally clear session state to reset the application form
+                  for key in list(st.session_state.keys()):
+                      del st.session_state[key]  # Clear each key to reset the form
+  
+              else:
+                  st.error("You must confirm the accuracy of your information before submitting.")
